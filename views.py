@@ -1,141 +1,128 @@
-from django.contrib.auth import authenticate, login, logout
+from haystack.views import *
+from labgeeksrpg.sybil.models import *
+from labgeeksrpg.delphi.models import Question
+from labgeeksrpg.pythia.models import Page
+from django.shortcuts import render_to_response
 from django.core.context_processors import csrf
-from django.shortcuts import render_to_response, HttpResponseRedirect
 from django.template import RequestContext
-from labgeeksrpg.forms import LoginForm
-import datetime
-from labgeeksrpg.labgeeksrpg_config.models import Notification
-from labgeeksrpg.labgeeksrpg_config.forms import NotificationForm
+from datetime import datetime
+from django.contrib.auth.decorators import login_required
+from labgeeksrpg.sybil.forms import *
 
 
-def hello(request):
-    """ The site dashboard.
-    """
-    #when a user is logged-in correctly
-    if request.user.is_authenticated():
-        locations = request.user.location_set.all()
-        shifts = request.user.shift_set.all()
-        clockin_time = 0
-        if locations and shifts:
-            clockin_time = shifts[len(shifts) - 1].intime
+class SybilSearch(SearchView):
+    def __name__(self):
+        return 'SybilSearch'
 
-        now = datetime.datetime.now()
-
-        notifications = Notification.objects.all()
-        events = []
-        alerts = []
-        for noti in notifications:
-            if noti.due_date:
-                if now.date() - noti.due_date.date() >= datetime.timedelta(days=1):
-                    noti.archived = True
-                elif not noti.due_date - now > datetime.timedelta(days=7) and not noti.archived:
-                    events.append(noti)
+    def get_results(self):
+        """
+        Fetches the results via the form.
+        Returns an empty list if there's no query to search with.
+        """
+        questions = []
+        returned_results = []
+        results = self.form.search()
+        for result in results:
+            if result.model_name == 'question':
+                if not result.object.pk in questions:
+                    returned_results.append(result)
+                    questions.append(result.object.pk)
+            elif result.model_name == 'answer':
+                if not result.object.question.pk in questions:
+                    returned_results.append(result)
+                    questions.append(result.object.question.pk)
             else:
-                if not noti.archived:
-                    alerts.append(noti)
-        events.sort(key=lambda x: x.due_date)
+                returned_results.append(result)
 
-        c = {}
-        c.update(csrf(request))
+        return returned_results
 
-        can_Add = False
-        if request.user.has_perm('labgeeksrpg_config.add_notification'):
-            can_Add = True
-
-        form_is_valid = True
-        if request.method == 'POST':
-            archive_ids = request.POST.getlist('pk')
-            if archive_ids:
-                for archive_id in archive_ids:
-                    notif = Notification.objects.get(pk=archive_id)
-                    notif.archived = True
-                    notif.save()
-                return HttpResponseRedirect('/')
-
-            form = NotificationForm(request.POST)
-            if form.is_valid():
-                form_is_valid = True
-                notification = form.save(commit=False)
-                notification.user = request.user
-                if notification.due_date:
-                    if now.date() - notification.due_date.date() >= datetime.timedelta(days=1):
-                        notification.archived = True
-                notification.save()
-                return HttpResponseRedirect('/')
-            else:
-                form_is_valid = False
-        else:
-            form = NotificationForm()
-
-        workshifts = request.user.workshift_set.all()
-        today_past_shifts = []
-        today_future_shifts = []
-        for shift in workshifts:
-            in_time = shift.scheduled_in
-            out_time = shift.scheduled_out
-            if (in_time.year == now.year and in_time.month == now.month and in_time.day == now.day):
-                if now - out_time > datetime.timedelta(seconds=1):
-                    today_past_shifts.append(shift)
-                else:
-                    today_future_shifts.append(shift)
-        args = {
-            'request': request,
-            'locations': locations,
-            'clockin_time': clockin_time,
-            'today_past_shifts': today_past_shifts,
-            'today_future_shifts': today_future_shifts,
-            'events': events,
-            'alerts': alerts,
-            'can_Add': can_Add,
-        }
-        return render_to_response('dashboard.html', locals(), context_instance=RequestContext(request))
-    else:
-        return render_to_response('hello.html', locals())
+    def extra_context(self):
+        return {'request': self.request, }
 
 
-def labgeeks_login(request):
-    """ Login a user. Called by the @login_required decorator.
-    """
+def oracle_home(request):
+    ''' displays the last 10 of each object created (page/question)
+    '''
+    pages = Page.objects.all().order_by('times_viewed')[:10]
+    questions = Question.objects.all().order_by('times_viewed')[:10]
+    return render_to_response('oracles.html', locals())
 
-    # Get a token to protect from cross-site request forgery
+
+@login_required
+def upload_image(request):
+    ''' This little method handles image uploading and naming
+    Upon successful upload, the required markdown code for embedding
+    is displayed with the uploaded image (using said markdown code)
+    '''
     c = {}
     c.update(csrf(request))
-    if request.user.is_authenticated():
-        try:
-            return HttpResponseRedirect(request.GET['next'])
-        except:
-            return HttpResponseRedirect('/')
-    elif request.method == 'POST':
-        form = LoginForm(request.POST)
-        if form.is_valid():
-            username = request.POST['username']
-            password = request.POST['password']
-            user = authenticate(username=username, password=password)
-            if user is not None:
-                if user.is_active:
-                    login(request, user)
-                    try:
-                        return HttpResponseRedirect(request.GET['next'])
-                    except:
-                        #Redirects to the dashboard.
-                        return HttpResponseRedirect('/')
-                else:
-                    # Return a disabled account error
-                    return HttpResponseRedirect('/inactive/')
-    else:
-        form = LoginForm()
-
-    return render_to_response('login.html', locals(), context_instance=RequestContext(request))
-
-
-def labgeeks_logout(request):
-    """ Manually log a user out.
-    """
-    logout(request)
-    return HttpResponseRedirect('/')
+    validation_message = ''
+    if request.method == 'POST':
+        form = UploadPictureForm(request.POST, request.FILES)
+        if form.is_valid() and 'picture' in request.FILES:
+            try:
+                form.clean_image()
+                gtg = True
+            except:
+                validation_message = 'Cannot upload images larger than 1920x1080.  Try again with a smaller picture!'
+                gtg = False
+            if gtg:
+                screenshot = form.save(commit=False)
+                screenshot.user = request.user
+                screenshot.date = datetime.now().date()
+                screenshot.name = request.FILES['picture']._get_name().replace(" ", "_")
+                screenshot.save()
+                markdown_code = '![alt](/uploads/oracles/screenshots/' + screenshot.name + ')'
+                return render_to_response('upload_success.html', locals())
+        else:
+            return render_to_response('upload_failure.html', locals())
+    form = UploadPictureForm()
+    form_fields = []
+    for field in form.visible_fields():
+        form_fields.append(field)
+    args = {
+        'form_fields': form_fields,
+        'user': request.user,
+        'validation_message': validation_message,
+        'request': request,
+    }
+    return render_to_response('upload_picture.html', args, context_instance=RequestContext(request))
 
 
-def inactive(request):
-    """ Return if a user's account has been disabled.
-    """
-    return render_to_response('inactive.html', locals())
+@login_required
+def view_all_screenshots(request):
+    ''' Returns a list of all screenshots with their markdown embedding code as links to esch screenshot
+    '''
+    try:
+        screenshots = Screenshot.objects.all().order_by('pk')
+    except Screenshot.DoesNotExist:
+        screenshots = None
+    ss_list = []
+    ss_listother = []
+    if screenshots:
+        yours = screenshots.filter(user=request.user)
+        if yours:
+            for screenshot in yours:
+                url = '/uploads/oracles/screenshots/' + screenshot.name
+                markdown_code = '![alt](' + url + ')'
+                ss_info = {
+                    'url': url,
+                    'markdown_code': markdown_code,
+                }
+                ss_list.append(ss_info)
+        others = screenshots.exclude(user=request.user)
+        if others:
+            for screenshot in others:
+                url = '/uploads/oracles/screenshots/' + screenshot.name
+                markdown_code = '![alt](' + url + ')'
+                ss_info = {
+                    'url': url,
+                    'markdown_code': markdown_code,
+                }
+                ss_listother.append(ss_info)
+    args = {
+        'yourshot': ss_list,
+        'othershot': ss_listother,
+        'request': request,
+    }
+    return render_to_response('screenshots.html', args)

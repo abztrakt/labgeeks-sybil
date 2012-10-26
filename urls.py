@@ -1,35 +1,9 @@
 from django.conf.urls.defaults import *
-import os
-import settings
+from labgeeksrpg.sybil.views import *
 
-# Uncomment the next two lines to enable the admin:
-from django.contrib import admin
-admin.autodiscover()
-
-urlpatterns = patterns('',
-                       # (r'^accounts/login/$', 'django.contrib.auth.views.login'),
-                       (r'^login/$', 'labgeeksrpg.views.labgeeks_login'),
-                       (r'^logout/$', 'labgeeksrpg.views.labgeeks_logout'),
-                       (r'^inactive/$', 'labgeeksrpg.views.inactive'),
-                       # Example:
-                       # (r'^labgeeksrpg/', include('labgeeksrpg.foo.urls')),
-                       (r'^chronos/', include('labgeeksrpg.chronos.urls')),
-                       (r'^people/', include('labgeeksrpg.people.urls')),
-                       (r'^schedule/', include('labgeeksrpg.schedule.urls')),
-                       (r'^delphi/', include('labgeeksrpg.delphi.urls')),
-                       (r'^pythia/', include('labgeeksrpg.pythia.urls')),
-                       (r'^$', 'labgeeksrpg.views.hello'),
-                       (r'^oracles/', include('labgeeksrpg.sybil.urls')),
-                       # Uncomment the admin/doc line below and add 'django.contrib.admindocs'
-                       # to INSTALLED_APPS to enable admin documentation:
-                       # (r'^admin/doc/', include('django.contrib.admindocs.urls')),
-
-                       # Uncomment the next line to enable the admin:
-                       (r'^admin/', include(admin.site.urls)),
+urlpatterns = patterns('labgeeksrpg.sybil.views',
+                       url(r'^search/$', SybilSearch(), name='haystack_search'),
+                       url(r'^$', 'oracle_home', name='oracle_home'),
+                       url(r'^upload_image/$', 'upload_image', name='upload_image'),
+                       url(r'^screenshots/$', 'view_all_screenshots', name='view_all_screenshots'),
                        )
-
-# only serve static files through the django server if debug is enabled. Only for development instances.
-if settings.DEBUG:
-    urlpatterns += patterns('',
-                            (r'^uploads/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT}),
-                            )
