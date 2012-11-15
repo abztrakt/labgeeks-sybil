@@ -1,5 +1,5 @@
 from django.contrib import admin
-from labgeeksrpg.sybil.models import Screenshot, Tag
+from labgeeks_sybil.models import Screenshot, Tag
 
 
 class ScreenshotAdmin(admin.ModelAdmin):

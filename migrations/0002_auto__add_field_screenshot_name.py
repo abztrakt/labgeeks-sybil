@@ -10,12 +10,12 @@ class Migration(SchemaMigration):
     def forwards(self, orm):
 
         # Adding field 'Screenshot.name'
-        db.add_column('sybil_screenshot', 'name', self.gf('django.db.models.fields.CharField')(max_length=50, null=True), keep_default=False)
+        db.add_column('labgeeks_sybil_screenshot', 'name', self.gf('django.db.models.fields.CharField')(max_length=50, null=True), keep_default=False)
 
     def backwards(self, orm):
 
         # Deleting field 'Screenshot.name'
-        db.delete_column('sybil_screenshot', 'name')
+        db.delete_column('labgeeks_sybil_screenshot', 'name')
 
     models = {
         'auth.group': {
@@ -54,7 +54,7 @@ class Migration(SchemaMigration):
             'model': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '100'})
         },
-        'sybil.screenshot': {
+        'labgeeks_sybil.screenshot': {
             'Meta': {'object_name': 'Screenshot'},
             'date': ('django.db.models.fields.DateField', [], {'null': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
@@ -64,4 +64,4 @@ class Migration(SchemaMigration):
         }
     }
 
-    complete_apps = ['sybil']
+    complete_apps = ['labgeeks_sybil']

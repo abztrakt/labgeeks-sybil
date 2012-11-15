@@ -1,13 +1,13 @@
 from haystack.views import *
-from labgeeksrpg.sybil.models import *
-from labgeeksrpg.delphi.models import Question
-from labgeeksrpg.pythia.models import Page
+from labgeeks_sybil.models import *
+from labgeeks_delphi.models import Question
+from labgeeks_pythia.models import Page
 from django.shortcuts import render_to_response
 from django.core.context_processors import csrf
 from django.template import RequestContext
 from datetime import datetime
 from django.contrib.auth.decorators import login_required
-from labgeeksrpg.sybil.forms import *
+from labgeeks_sybil.forms import *
 
 
 class SybilSearch(SearchView):

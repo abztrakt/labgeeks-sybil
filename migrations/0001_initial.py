@@ -10,18 +10,18 @@ class Migration(SchemaMigration):
     def forwards(self, orm):
 
         # Adding model 'Screenshot'
-        db.create_table('sybil_screenshot', (
+        db.create_table('labgeeks_sybil_screenshot', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('picture', self.gf('django.db.models.fields.files.ImageField')(max_length=100, null=True, blank=True)),
             ('user', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['auth.User'], null=True, blank=True)),
             ('date', self.gf('django.db.models.fields.DateField')(null=True)),
         ))
-        db.send_create_signal('sybil', ['Screenshot'])
+        db.send_create_signal('labgeeks_sybil', ['Screenshot'])
 
     def backwards(self, orm):
 
         # Deleting model 'Screenshot'
-        db.delete_table('sybil_screenshot')
+        db.delete_table('labgeeks_sybil_screenshot')
 
     models = {
         'auth.group': {
@@ -60,7 +60,7 @@ class Migration(SchemaMigration):
             'model': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '100'})
         },
-        'sybil.screenshot': {
+        'labgeeks_sybil.screenshot': {
             'Meta': {'object_name': 'Screenshot'},
             'date': ('django.db.models.fields.DateField', [], {'null': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
@@ -69,4 +69,4 @@ class Migration(SchemaMigration):
         }
     }
 
-    complete_apps = ['sybil']
+    complete_apps = ['labgeeks_sybil']

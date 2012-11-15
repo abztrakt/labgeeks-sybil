@@ -1,6 +1,6 @@
 from django import forms
 from django.forms import ModelForm
-from labgeeksrpg.sybil.models import *
+from labgeeks_sybil.models import *
 
 
 class UploadPictureForm(ModelForm):
