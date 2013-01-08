@@ -1,7 +1,8 @@
+*.db
+*.egg-info
 *.pyc
 *.swp
 *.swo
-*.db
 .project
 .pydevproject
 .settings
