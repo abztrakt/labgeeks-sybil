@@ -45,7 +45,8 @@ def oracle_home(request):
     '''
     pages = Page.objects.all().order_by('times_viewed')[:10]
     questions = Question.objects.all().order_by('times_viewed')[:10]
-    return render_to_response('oracles.html', locals())
+    params = {'pages': pages, 'questions': questions, 'request': request,}
+    return render_to_response('oracles.html', params)
 
 
 @login_required
@@ -73,9 +74,9 @@ def upload_image(request):
                 screenshot.name = request.FILES['picture']._get_name().replace(" ", "_")
                 screenshot.save()
                 markdown_code = '![alt](/uploads/oracles/screenshots/' + screenshot.name + ')'
-                return render_to_response('upload_success.html', locals())
+                return render_to_response('upload_success.html', {'request': request, 'markdown_code': markdown_code,})
         else:
-            return render_to_response('upload_failure.html', locals())
+            return render_to_response('upload_failure.html', {'request': request,})
     form = UploadPictureForm()
     form_fields = []
     for field in form.visible_fields():
